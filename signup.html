@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Account</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to bottom right, #ffffff, #e9ecef);
+    }
+    .container {
+      max-width: 450px;
+      margin: 70px auto;
+      background: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      text-align: center;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 12px;
+      border-radius: 6px;
+      border: 1px solid #bbb;
+      font-size: 16px;
+    }
+    .btn {
+      width: 100%;
+      padding: 12px;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 17px;
+      cursor: pointer;
+    }
+    .btn:hover {
+      background: #005fcc;
+    }
+    .error-msg {
+      color: red;
+      margin-top: 8px;
+      font-size: 14px;
+    }
+    .back {
+      margin-top: 15px;
+      cursor: pointer;
+      font-size: 14px;
+      color: #666;
+    }
+    .back:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h2 id="signup-title"></h2>
+
+    <input type="text" id="name" placeholder="Full Name" required>
+    <input type="email" id="email" placeholder="Email" required>
+    <input type="password" id="password" placeholder="Password" required>
+
+    <button class="btn" onclick="signup()">Create Account</button>
+    <p id="error" class="error-msg"></p>
+    <div class="back" onclick="goBack()">← Back</div>
+  </div>
+
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const role = urlParams.get("role") || "attendee";
+
+  document.getElementById("signup-title").textContent =
+    role === "attendee" ? "Create Attendee Account" : "Create Organizer Account";
+
+  async function signup() {
+    const fullName = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value.trim();
+
+    // Basic validation
+    if (!fullName || !email || !password) {
+      document.getElementById("error").textContent = "All fields are required";
+      return;
+    }
+
+    document.getElementById("error").textContent = ""; // Clear error
+
+    const res = await fetch("https://cognito-idp.us-east-1.amazonaws.com/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-amz-json-1.1",
+        "X-Amz-Target": "AWSCognitoIdentityProviderService.SignUp"
+      },
+      body: JSON.stringify({
+        ClientId: "63jhpkv71c12o0120ojtbkvm5k",
+        Username: email,
+        Password: password,
+        UserAttributes: [
+          { Name: "name", Value: fullName },
+          { Name: "email", Value: email }
+        ],
+        ClientMetadata: { role } // sends role to Lambda → DynamoDB
+      })
+    });
+
+    const data = await res.json();
+
+    if (data.code || data.__type === "InvalidParameterException") {
+      document.getElementById("error").textContent = data.message || "Signup failed";
+      return;
+    }
+
+    // Signup success
+    if (data.userConfirmed === false) {
+      alert("Account created! Check your email for verification link.");
+      window.location.href = `auth-login.html?role=${role}`;
+    } else {
+      alert("Account created!");
+      window.location.href = `auth-login.html?role=${role}`;
+    }
+  }
+
+  function goBack() {
+    window.history.back();
+  }
+</script>
+
+</body>
+</html>
