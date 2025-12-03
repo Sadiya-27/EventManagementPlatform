@@ -199,9 +199,10 @@
   function selectRole(role) {
     selectedRole = role;
 
-    // hide cards
+    // Save role immediately so next pages know it
+    localStorage.setItem("selectedRole", selectedRole);
+
     document.getElementById("selection-section").style.display = "none";
-    // show login box
     document.getElementById("login-section").style.display = "block";
 
     document.getElementById("portal-title").textContent =
@@ -210,19 +211,23 @@
 
   function goBack() {
     selectedRole = null;
+    localStorage.removeItem("selectedRole");
+
     document.getElementById("selection-section").style.display = "grid";
     document.getElementById("login-section").style.display = "none";
   }
 
- function redirectToLogin() {
-  if (!selectedRole) return;
-  window.location.href = `auth-login.html?role=${selectedRole}`;
-}
+  function redirectToLogin() {
+    if (!selectedRole) return alert("Please select a role first.");
 
-  
+    // Persist selection
+    localStorage.setItem("selectedRole", selectedRole);
 
-
+    // Redirect
+    window.location.href = "auth-login.html";
+  }
 </script>
+
 
 </body>
 </html>

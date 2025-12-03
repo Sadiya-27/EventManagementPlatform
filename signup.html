@@ -79,52 +79,35 @@
     role === "attendee" ? "Create Attendee Account" : "Create Organizer Account";
 
   async function signup() {
-    const fullName = document.getElementById("name").value.trim();
-    const email = document.getElementById("email").value.trim();
-    const password = document.getElementById("password").value.trim();
+  const fullName = document.getElementById("name").value.trim();
+  const email = document.getElementById("email").value.trim();
+  const password = document.getElementById("password").value.trim();
+  const role = urlParams.get("role");
+ // attendee | organizer
 
-    // Basic validation
-    if (!fullName || !email || !password) {
-      document.getElementById("error").textContent = "All fields are required";
-      return;
-    }
-
-    document.getElementById("error").textContent = ""; // Clear error
-
-    const res = await fetch("https://cognito-idp.us-east-1.amazonaws.com/", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-amz-json-1.1",
-        "X-Amz-Target": "AWSCognitoIdentityProviderService.SignUp"
-      },
-      body: JSON.stringify({
-        ClientId: "63jhpkv71c12o0120ojtbkvm5k",
-        Username: email,
-        Password: password,
-        UserAttributes: [
-          { Name: "name", Value: fullName },
-          { Name: "email", Value: email }
-        ],
-        ClientMetadata: { role } // sends role to Lambda → DynamoDB
-      })
-    });
-
-    const data = await res.json();
-
-    if (data.code || data.__type === "InvalidParameterException") {
-      document.getElementById("error").textContent = data.message || "Signup failed";
-      return;
-    }
-
-    // Signup success
-    if (data.userConfirmed === false) {
-      alert("Account created! Check your email for verification link.");
-      window.location.href = `auth-login.html?role=${role}`;
-    } else {
-      alert("Account created!");
-      window.location.href = `auth-login.html?role=${role}`;
-    }
+  if (!fullName || !email || !password || !role) {
+    document.getElementById("error").textContent = "All fields are required";
+    return;
   }
+
+  document.getElementById("error").textContent = "";
+
+  const res = await fetch("https://5s70soh0c1.execute-api.us-east-1.amazonaws.com/test1/signup", {  // 🔥 REPLACE THIS
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: fullName, email: email, password: password, role: role })
+  });
+
+  const data = await res.json();
+
+  if (data.error) {
+    document.getElementById("error").textContent = data.error;
+    return;
+  }
+
+  alert("Account created! Please verify your email before logging in.");
+  window.location.href = "confirm.html";
+}
 
   function goBack() {
     window.history.back();
