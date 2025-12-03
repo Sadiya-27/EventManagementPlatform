@@ -36,6 +36,10 @@
 </div>
 
 <script>
+    const params = new URLSearchParams(window.location.search);
+const preEmail = params.get("email");
+if (preEmail) document.getElementById("email").value = preEmail;
+
   async function confirmSignup() {
     const email = document.getElementById("email").value.trim();
     const code = document.getElementById("code").value.trim();

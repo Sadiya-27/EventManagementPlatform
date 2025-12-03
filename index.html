@@ -196,36 +196,40 @@
 <script>
   let selectedRole = null;
 
-  function selectRole(role) {
-    selectedRole = role;
+function selectRole(roleValue) {
+  selectedRole = roleValue;
 
-    // Save role immediately so next pages know it
-    localStorage.setItem("selectedRole", selectedRole);
+  // Save role immediately so next pages know it
+  localStorage.setItem("selectedRole", selectedRole);
 
-    document.getElementById("selection-section").style.display = "none";
-    document.getElementById("login-section").style.display = "block";
+  document.getElementById("selection-section").style.display = "none";
+  document.getElementById("login-section").style.display = "block";
 
-    document.getElementById("portal-title").textContent =
-      role === "attendee" ? "Attendee Portal" : "Organizer Portal";
+  document.getElementById("portal-title").textContent =
+    selectedRole === "attendee" ? "Attendee Portal" : "Organizer Portal";
+}
+
+function goBack() {
+  selectedRole = null;
+  localStorage.removeItem("selectedRole");
+
+  document.getElementById("selection-section").style.display = "grid";
+  document.getElementById("login-section").style.display = "none";
+}
+
+function redirectToLogin() {
+  // Always fetch from localStorage to avoid variable issues
+  const roleToPass = localStorage.getItem("selectedRole");
+
+  if (!roleToPass) {
+    alert("Please select a role first.");
+    return;
   }
 
-  function goBack() {
-    selectedRole = null;
-    localStorage.removeItem("selectedRole");
+  // Redirect correctly
+  window.location.href = `auth-login.html?role=${roleToPass}`;
+}
 
-    document.getElementById("selection-section").style.display = "grid";
-    document.getElementById("login-section").style.display = "none";
-  }
-
-  function redirectToLogin() {
-    if (!selectedRole) return alert("Please select a role first.");
-
-    // Persist selection
-    localStorage.setItem("selectedRole", selectedRole);
-
-    // Redirect
-    window.location.href = "auth-login.html";
-  }
 </script>
 
 

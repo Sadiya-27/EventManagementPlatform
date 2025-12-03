@@ -105,20 +105,53 @@
 
   const data = await res.json();
 
-  if (data.idToken) {
-    alert("Login successful!");
-    localStorage.setItem("idToken", data.idToken);
-    localStorage.setItem("accessToken", data.accessToken);
-    localStorage.setItem("refreshToken", data.refreshToken);
-    if (role === "organizer") {
+  if (!data.idToken) {
+    alert(data.error || "Login failed");
+    return;
+  }
+
+  alert("Login successful!");
+  localStorage.setItem("idToken", data.idToken);
+  localStorage.setItem("accessToken", data.accessToken);
+  localStorage.setItem("refreshToken", data.refreshToken);
+
+  // 🔥 Get user info from Cognito
+  const userRes = await fetch("https://cognito-idp.us-east-1.amazonaws.com/", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-amz-json-1.1",
+      "X-Amz-Target": "AWSCognitoIdentityProviderService.GetUser"
+    },
+    body: JSON.stringify({
+      AccessToken: data.accessToken
+    })
+  });
+
+  const userData = await userRes.json();
+
+  if (!userData.UserAttributes) {
+    alert("Failed to fetch user details");
+    return;
+  }
+
+  const emailAttr = userData.UserAttributes.find(a => a.Name === "email");
+  const nameAttr = userData.UserAttributes.find(a => a.Name === "name");
+  const roleAttr = userData.UserAttributes.find(a => a.Name === "custom:role");
+  const userIdAttr = userData.UserAttributes.find(a => a.Name === "sub");
+
+  localStorage.setItem("email", emailAttr?.Value || "");
+  localStorage.setItem("fullName", nameAttr?.Value || "");
+  localStorage.setItem("role", roleAttr?.Value || "");
+  localStorage.setItem("userId", userIdAttr?.Value || "");
+
+  // Redirect
+  if (roleAttr?.Value === "organizer") {
     window.location.href = "organizer-dashboard.html";
   } else {
     window.location.href = "attendee-dashboard.html";
   }
-  } else {
-    alert(data.error);
-  }
 }
+
 
   function goBack() { window.history.back(); }
   function goToSignup() { window.location.href = `signup.html?role=${role}`; }
