@@ -61,66 +61,63 @@
   <input type="text" id="location" placeholder="Event Location" />
   <input type="number" id="maxSeats" placeholder="Max Seats" />
 
-  <button class="btn" onclick="createEvent()">Create Event</button>
+  <button class="btn" onclick="submitEvent()">Create Event</button>
+
   <p id="msg" class="error"></p>
 
   <div class="back" onclick="goBack()">← Back to Dashboard</div>
 </div>
 
 <script>
-  // Check Authentication
-  const token = localStorage.getItem("idToken");
-  const role = localStorage.getItem("role");
+  const CREATE_EVENT_API = "https://5ak2zj8p8b.execute-api.us-east-1.amazonaws.com/test/events/create"; // your lambda URL
 
-  if (!token || role !== "organizer") {
-    alert("Access Denied — Please login first");
-    window.location.href = "auth-login.html?role=organizer";
+  async function submitEvent() {
+  const name = document.getElementById("name").value;
+  const date = document.getElementById("date").value;
+  const location = document.getElementById("location").value;
+  const maxSeats = document.getElementById("maxSeats").value;
+
+  const msg = document.getElementById("msg");
+
+  if (!name || !date || !location || !maxSeats) {
+    msg.className = "error";
+    msg.textContent = "All fields are required";
+    return;
   }
 
-  const CREATE_EVENT_API = "https://5ak2zj8p8b.execute-api.us-east-1.amazonaws.com/test/create-event"; // <-- update when backend ready
+  console.log("🔵 Sending request to API...");
 
-  async function createEvent() {
-    const name = document.getElementById("name").value;
-    const date = document.getElementById("date").value;
-    const location = document.getElementById("location").value;
-    const maxSeats = document.getElementById("maxSeats").value;
-
-    if (!name || !date || !location || !maxSeats) {
-      document.getElementById("msg").textContent = "All fields are required";
-      return;
-    }
-
+  try {
     const res = await fetch(CREATE_EVENT_API, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: token // Optional signature security
-      },
-      body: JSON.stringify({
-        name,
-        date,
-        location,
-        maxSeats
-      })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, date, location, maxSeats })
     });
 
+    console.log("🟢 Response status:", res.status);
+
     const data = await res.json();
+    console.log("🟢 Response body:", data);
 
     if (res.status === 200) {
-      document.getElementById("msg").className = "success";
-      document.getElementById("msg").textContent = "Event created successfully!";
-      setTimeout(() => {
-        window.location.href = "organizer-dashboard.html";
-      }, 1500);
+      msg.className = "success";
+      msg.textContent = "Event created successfully!";
+      setTimeout(() => window.location.href = "organizer-dashboard.html", 1000);
     } else {
-      document.getElementById("msg").className = "error";
-      document.getElementById("msg").textContent = data.error || "Something went wrong";
+      msg.className = "error";
+      msg.textContent = data.message || "Something went wrong";
     }
+  } catch (err) {
+    console.error("🔴 ERROR sending request:", err);
+    msg.className = "error";
+    msg.textContent = "Network error – Check browser console";
   }
+}
 
   function goBack() {
     window.location.href = "organizer-dashboard.html";
   }
 </script>
+
 </body>
 </html>
