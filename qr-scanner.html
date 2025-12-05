@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>QR Scanner | EventHub</title>
 
-<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<!-- Updated library version -->
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 
 <style>
   body {
@@ -33,6 +34,7 @@
   #reader {
     width: 100%;
     margin: auto;
+    min-height: 320px;
   }
   .msg {
     font-size: 18px;
@@ -64,42 +66,65 @@
   }
 
   async function processQR(decodedText) {
-    const ticketId = decodedText.trim(); // QR contains UUID only
+    const ticketId = decodedText.trim();
 
-    const res = await fetch(ATTENDANCE_API, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ticketId })
-    });
+    try {
+      const res = await fetch(ATTENDANCE_API, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ticketId })
+      });
 
-    const data = await res.json();
+      const data = await res.json();
+      
+      if (res.status === 200) showMessage(data.message, "success");
+      else showMessage(data.message || "Validation failed ❌", "error");
 
-    if (res.status === 200) showMessage(data.message, "success");
-    else showMessage(data.message || "Validation failed ❌", "error");
+    } catch (err) {
+      showMessage("Network error ❌", "error");
+    }
   }
 
   function goBack() {
     window.location.href = "organizer-dashboard.html";
   }
 
-  // ⛔ disable unwanted "Failed to parse JSON" alert from html5-qrcode
-  Html5Qrcode.prototype._onScanError = function() {};
+  // Initialize scanner after page loads
+  window.onload = () => {
+    const qrScanner = new Html5Qrcode("reader");
 
-  const qrScanner = new Html5Qrcode("reader");
-  qrScanner.start(
-    { facingMode: "environment" },
-    { fps: 10, qrbox: 250 },
-    decodedText => {
-      qrScanner.pause();
-      processQR(decodedText);
-      setTimeout(() => qrScanner.resume(), 2000);
-    }
-  ).catch(err => {
-    showMessage("Camera Access Failed ❌", "error");
-    console.error(err);
-  });
+    // Remove console JSON warning
+    Html5Qrcode.prototype._onScanError = function() {};
+
+    Html5Qrcode.getCameras()
+      .then(cameras => {
+        if (!cameras.length) {
+          showMessage("No camera detected ❌", "error");
+          return;
+        }
+
+        const cameraId = cameras[0].id; // use 1st camera
+
+        qrScanner.start(
+          cameraId,
+          { fps: 10, qrbox: 250 },
+          decodedText => {
+            qrScanner.pause();
+            processQR(decodedText);
+            setTimeout(() => qrScanner.resume(), 2500);
+          }
+        ).catch(err => {
+          showMessage("Camera Access Failed ❌", "error");
+          console.error(err);
+        });
+
+      })
+      .catch(err => {
+        showMessage("Camera Permission Blocked ❌", "error");
+        console.error(err);
+      });
+  };
 </script>
-
 
 </body>
 </html>
